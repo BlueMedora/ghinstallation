@@ -8,6 +8,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -103,7 +104,7 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	}
 
 	req.Header.Set("Authorization", "token "+token)
-	req.Header.Add("Accept", acceptHeader) // We add to "Accept" header to avoid overwriting existing req headers.
+	addAcceptHeader(req.Header)
 	resp, err := t.tr.RoundTrip(req)
 	return resp, err
 }
@@ -188,4 +189,23 @@ func GetReadWriter(i interface{}) (io.ReadWriter, error) {
 		}
 	}
 	return buf, nil
+}
+
+// addAcceptHeader adds acceptHeader value to "Accept" header, but only
+// if the current "Accept" header is not set, or if it already accepts JSON.
+func addAcceptHeader(headers http.Header) {
+	if headers.Get("Accept") == "" {
+		headers.Set("Accept", acceptHeader)
+		return
+	}
+
+	// Need to loop through all Accept headers in case there is more than one.
+	for _, header := range headers["Accept"] {
+		// Looks as though all media types (https://developer.github.com/v3/media/) that can accept json end with "json".
+		// Only doing a suffix check to see if a json header already exists.
+		if strings.HasSuffix(header, "json") {
+			headers.Add("Accept", acceptHeader) // We add to "Accept" header to avoid overwriting existing req headers.
+			return
+		}
+	}
 }
