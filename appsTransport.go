@@ -77,7 +77,7 @@ func (t *AppsTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	}
 
 	req.Header.Set("Authorization", "Bearer "+ss)
-	req.Header.Add("Accept", acceptHeader)
+	addAcceptHeader(req.Header)
 
 	resp, err := t.tr.RoundTrip(req)
 	return resp, err
